@@ -1,0 +1,8 @@
+*~
+*.bak
+*.bck
+*-bak
+*.net
+*.pyc
+*.pyo
+.ipynb_checkpoints/
