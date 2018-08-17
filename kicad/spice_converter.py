@@ -10,7 +10,7 @@ import numpy as np
 from . import schema
 
 from spice.circuit import Circuit
-from spice.unit import parse_unit
+from spice import unit
 
 supply_pat = r'(?P<sign>[+-]?)(?P<int>[0-9]+)V(?P<frac>[0-9]*)$'
 supply_re = re.compile(supply_pat)
@@ -127,7 +127,7 @@ def sch_to_circuit(sch):
             value = comp.fields[1].text
             if value.lower().endswith('ohm'):
                 value = value[:-3]
-            value = parse_unit(value)
+            value = unit.parse_unit(value)
             circuit.R(comp.ref, nets['1'], nets['2'], value)
 
         elif comp.name in [ 'Device:C' ]:
@@ -135,19 +135,20 @@ def sch_to_circuit(sch):
             value = comp.fields[1].text
             if value.endswith('F'):
                 value = value[:-1]
-            value = parse_unit(value)
+            value = unit.parse_unit(value)
             circuit.C(comp.ref, nets['1'], nets['2'], value)
 
         elif comp.name in [ 'Device:L' ]:
             assert comp.ref.startswith('L')
             if value.endswith('H'):
                 value = value[:-1]
-            value = parse_unit(value)
+            value = unit.parse_unit(value)
             circuit.C(comp.ref, nets['1'], nets['2'], value)
 
         elif comp.name in [ 'power:GND' ]:
             assert comp.ref.startswith('#PWR')
-            circuit.R('R' + comp.ref[1:], nets['1'], 0, 0)
+            # circuit.R('R' + comp.ref[1:], nets['1'], 0, 1 * unit.p)
+            circuit.V('V' + comp.ref[1:], nets['1'], 0, 0)
 
         elif comp.name.startswith('power:'):
             assert comp.ref.startswith('#PWR')
