@@ -163,7 +163,11 @@ class PathList():
 def scale_ax(ax, scale_factor):
     for c in ax.collections:
         if isinstance(c, LineCollection):
-            c.set_linewidth(c.get_linewidth() * scale_factor)
+            lw = c.get_linewidth()
+            if isinstance(lw, tuple):
+                assert len(lw) == 1
+                lw = lw[0]
+            c.set_linewidth(lw * scale_factor)
         elif isinstance(c, PathCollection):
             c.set_linewidths(np.array(c.get_linewidths()) * scale_factor)
     for t in ax.texts:
