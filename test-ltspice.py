@@ -5,10 +5,10 @@ import sys
 
 from kicad import schema
 from kicad import spice_converter
-from spice.ngspice import Simulator
+from spice.ltspice import Simulator
 
 def test(fn):
-    from spice.unit import m
+    from spice import unit
 
     sch = schema.Sch(fn)
     circuit = spice_converter.sch_to_circuit(sch)
@@ -17,7 +17,10 @@ def test(fn):
 
     print(sim.circuit_to_spice(circuit))
 
-    data = sim.dc(circuit, 'V101', -2, 2, 1 * m)
+    data = sim.dc(circuit, 'v101', -2, 2, 1 * unit.m)
+    # data = sim.tran(circuit, 100 * unit.u, 50 * unit.m)
+
+    print(data.keys())
 
     print(data['SWEEP'])
     print(data['V(VOUT)'])

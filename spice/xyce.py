@@ -1,32 +1,31 @@
 #! /usr/bin/python
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-from .simulator import SimulatorBase
-
 import numpy as np
 
-class Ngspice(SimulatorBase):
-    SIMULATOR = 'ngspice'
+from .simulator import SimulatorBase
+
+class Xyce(SimulatorBase):
+    SIMULATOR = 'LD_LIBRARY_PATH=/usr/local/xyce/serial/lib /usr/local/xyce/serial/bin/Xyce'
 
     def __init__(self, trace = None):
-        super(Ngspice, self).__init__(trace)
+        super(Xyce, self).__init__(trace)
 
     def update_variables(self, dataset):
         dataset.dt = []
         for idx, (name, unit, params) in enumerate(self.variables):
             name = name.upper()
-            if name in [ 'V(V-SWEEP)', 'I(I-SWEEP)' ]:
-                assert idx == 0
-                name = 'SWEEP'
+            if name.startswith('V') and not name.startswith('V('):
+                name = 'V(%s)' % name
+            elif name.startswith('I') and not name.startswith('I('):
+                name = 'I(%s)' % name
 
             dataset.unit[name] = unit
             dataset.params[name] = params
 
-            name = str(name)
-
             if 'complex' in dataset.flags:
                 dataset.dt.append(( name, np.complex128 ))
             else:
-                dataset.dt.append(( name, '<f8' ))
+                dataset.dt.append(( name, np.float64 ))
 
-Simulator = Ngspice
+Simulator = Xyce

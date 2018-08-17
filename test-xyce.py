@@ -5,7 +5,7 @@ import sys
 
 from kicad import schema
 from kicad import spice_converter
-from spice.ngspice import Simulator
+from spice.xyce import Simulator
 
 def test(fn):
     from spice.unit import m
@@ -17,7 +17,7 @@ def test(fn):
 
     print(sim.circuit_to_spice(circuit))
 
-    data = sim.dc(circuit, 'V101', -2, 2, 1 * m)
+    data = sim.dc(circuit, 'v101', -2, 2, 1 * m)
 
     print(data['SWEEP'])
     print(data['V(VOUT)'])
