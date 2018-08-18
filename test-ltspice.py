@@ -13,12 +13,11 @@ def test(fn):
     sch = schema.Sch(fn)
     circuit = spice_converter.sch_to_circuit(sch)
 
-    sim = Simulator(trace = sys.stdout.write)
+    sim = Simulator()
 
     print(sim.circuit_to_spice(circuit))
 
     data = sim.dc(circuit, 'v101', -2, 2, 1 * unit.m)
-    # data = sim.tran(circuit, 100 * unit.u, 50 * unit.m)
 
     print(data.keys())
 

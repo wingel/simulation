@@ -85,13 +85,14 @@ class SchDescr(Element):
     def parse(self, parser):
         # $Descr A3 16535 11700
         parts = parser.parse_line()
-        assert len(parts) == 4
+        assert len(parts) >= 4
         assert parts[0] == '$Descr'
         self.size = parts[1]
         assert self.size in [ 'A0', 'A1', 'A2', 'A3', 'A4',
                               'A', 'B', 'C', 'D', 'E', 'User' ]
         self.w = int(parts[2])
         self.h = int(parts[3])
+        self.flags = parts[4:]
 
         parts = parser.parse_line()
         if parts[0] == 'encoding':
@@ -157,8 +158,11 @@ class SchDescr(Element):
         assert parts[0] == '$EndDescr'
 
     def format(self, outf):
-        outf.write('$Descr %s %u %u\n' % (
-            self.size, self.w, self.h))
+        extra = ' '.join(self.flags)
+        if extra:
+            extra = ' ' + extra
+        outf.write('$Descr %s %u %u%s\n' % (
+            self.size, self.w, self.h, extra))
         if self.encoding is not None:
             outf.write('encoding %s\n' % self.encoding)
         outf.write('Sheet %u %u\n' % (self.sheet_num, self.sheet_max))

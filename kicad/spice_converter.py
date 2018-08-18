@@ -75,7 +75,9 @@ def sch_to_circuit(sch):
 
         if VERBOSE:
             print("label net %s as %s" % (net.id, text.text))
-        assert isinstance(net.id, int)
+        if not isinstance(net.id, int):
+            raise ValueError("two labels for same net: %s and %s" % (
+                net.id, text.text))
 
         net.id = text.text
 
@@ -122,7 +124,38 @@ def sch_to_circuit(sch):
 
             nets[draw.pin] = net.id
 
-        if comp.name in [ 'Device:R' ]:
+        if 'Spice_Netlist_Enabled' in comp.fields:
+            if comp.fields['Spice_Netlist_Enabled'].text == 'Y':
+                if comp.fields['Spice_Primitive'].text:
+                    if 'Spice_Lib_File' in comp.fields and comp.fields['Spice_Lib_File'].text:
+                        fn = os.path.join(sch.base, comp.fields['Spice_Lib_File'].text)
+                        circuit.add_include(fn)
+
+                    seq_field = comp.fields.get('Spice_Node_Sequence')
+                    if seq_field:
+                        seq = seq_field.text.split()
+                    else:
+                        seq = [ str(_+1) for _ in range(len(nets)) ]
+
+                    nodes = []
+                    for arg in seq:
+                        nodes.append(str(nets[str(arg)]))
+
+                    model = comp.fields['Spice_Model'].text
+
+                    ref = comp.ref
+                    if not ref.startswith(comp.fields['Spice_Primitive'].text):
+                        ref = comp.fields['Spice_Primitive'].text + ref
+
+                    if VERBOSE:
+                        print(ref, nodes, model)
+
+                    circuit.Device(ref, nodes, model)
+
+                else:
+                    print("unknown spice model %s with ref %s" % (comp.fields['Spice_Primitive'].text, comp.ref))
+
+        elif comp.name in [ 'Device:R' ]:
             assert comp.ref.startswith('R')
             value = comp.fields[1].text
             if value.lower().endswith('ohm'):
@@ -167,39 +200,6 @@ def sch_to_circuit(sch):
                 circuit.V('V' + comp.ref[1:], nets['1'], 0, v)
             else:
                 print("can't figure out supply voltage for %s with ref %s" % (comp.name, comp.ref))
-
-        elif 'Spice_Netlist_Enabled' in comp.fields:
-            if comp.fields['Spice_Netlist_Enabled'].text == 'Y':
-                if comp.fields['Spice_Primitive'].text:
-                    if 'Spice_Lib_File' in comp.fields and comp.fields['Spice_Lib_File'].text:
-                        fn = os.path.join(sch.base, comp.fields['Spice_Lib_File'].text)
-                        circuit.add_include(fn)
-
-                    seq_field = comp.fields.get('Spice_Node_Sequence')
-                    if seq_field:
-                        seq = seq_field.text.split()
-                    else:
-                        seq = [ str(_+1) for _ in range(len(nets)) ]
-
-                    nodes = []
-                    for arg in seq:
-                        nodes.append(str(nets[str(arg)]))
-
-                    model = comp.fields['Spice_Model'].text
-
-                    ref = comp.ref
-                    if comp.fields['Spice_Primitive'].text in [ 'X' ]:
-                        ref = 'X' + ref
-                    else:
-                        assert ref.startswith(comp.fields['Spice_Primitive'].text)
-
-                    if VERBOSE:
-                        print(ref, nodes, model)
-
-                    circuit.Device(ref, nodes, model)
-
-                else:
-                    print("unknown spice model %s with ref %s" % (comp.fields['Spice_Primitive'].text, comp.ref))
 
         else:
             print("unknown component %s with ref %s" % (comp.name, comp.ref))

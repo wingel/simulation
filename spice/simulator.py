@@ -9,33 +9,69 @@ from subprocess import Popen, PIPE, STDOUT
 import tempfile
 import time
 import shutil
+from collections import OrderedDict
 
 from . import unit
 
 class Dataset(dict):
     pass
 
+class Progress(object):
+    def __init__(self):
+        pass
+
+    def start(self):
+        pass
+
+    def stop(self, status):
+        pass
+
+    def percent(self, percent):
+        pass
+
+class Variable(object):
+    def __init__(self, idx, name, unit, param):
+        self.idx = idx
+        self.name = name
+        self.old_name = name
+        self.unit = unit
+        self.param = param
+
 class SimulatorBase(object):
     ENCODING = 'utf-8'
     SEPARATOR = '\n'
     BLOCKSIZE = 16
     BASE = '.'
+    HEADER = ''
 
-    def __init__(self, trace = None):
-        if not trace:
-            trace = self._default_trace
-        self.trace = trace
-        self.timing = 1
+    def __init__(self):
+        self.timing = 0
+        self.verbose = 0
+        self.progress = Progress()
+        self.last_trace = ''
 
-    def _default_trace(self, s):
-        self.output.append(s)
+    def _dummy(self, *args, **kwargs):
+        pass
+
+    def trace(self, s):
+        if s == self.last_trace:
+            return
+
+        self.last_trace = s
+
+        if self.verbose >= 1:
+            print(s)
+        self.output.append(str(s))
+
+    def log(self):
+        return '\n'.join(self.output)
 
     def fix_param(self, v):
         if isinstance(v, unit._Unit):
-            suffix = v.suffix
-            if suffix == 'M':
-                suffix = 'MEG'
-            return str(v.value / v.multiplier) + suffix
+            prefix = v.prefix
+            if prefix == 'M':
+                prefix = 'MEG'
+            return str(v.value / v.multiplier) + prefix
 
         return str(v)
 
@@ -114,52 +150,9 @@ class SimulatorBase(object):
 
         return data
 
-    def _load(self, f):
-        self.f = f
+    def _load_variables(self, dataset):
+        dataset.variables = OrderedDict()
 
-        self.buf = bytearray()
-        self.offset = 0
-
-        self.separator = bytearray(self.SEPARATOR, self.ENCODING)
-
-        dataset = Dataset()
-
-        k, v = self.readheader()
-        assert k == 'Title'
-        dataset.title = v
-
-        k, v = self.readheader()
-        assert k == 'Date'
-        dataset.date = v
-
-        k, v = self.readheader()
-        assert k == 'Plotname'
-        dataset.plotname = v
-
-        k, v = self.readheader()
-        assert k == 'Flags'
-        dataset.flags = v.split()
-
-        k, v = self.readheader()
-        assert k == 'No. Variables'
-        dataset.nr_variables = int(v)
-
-        k, v = self.readheader()
-        assert k == 'No. Points'
-        dataset.nr_points = int(v)
-
-        while 1:
-            k, v = self.readheader()
-            if k == 'Variables':
-                break
-            print("Extra header: %s: %s" % (k, v))
-        assert k == 'Variables'
-        assert not v
-
-        dataset.unit = {}
-        dataset.params = {}
-
-        self.variables = []
         for idx in range(dataset.nr_variables):
             parts = self.readline().strip().split()
             assert int(parts[0]) == idx
@@ -169,25 +162,59 @@ class SimulatorBase(object):
             for s in parts[3:]:
                 i = s.find('=')
                 params[s[:i]] = s[i+1:]
-            self.variables.append((name, unit, params))
 
-        k, v = self.readheader()
-        assert k == 'Binary'
-        assert not v
+            var = Variable(idx, name, unit, params)
 
-        self.update_variables(dataset)
+            self.update_variable(dataset, var)
 
+            dataset.variables[var.name] = var
+
+    def _load_binary(self, dataset):
         # Doing str here is a workaround for numpy 1.11 not understanding unicode
-        dt = np.dtype([ (str(name), type) for (name, type) in dataset.dt ])
+        dt = np.dtype([ (str(var.name), var.dt) for var in dataset.variables.values() ])
 
         n = dataset.nr_points * dt.itemsize
         buf = self.read(n)
-        # print(n, len(buf))
 
         data = np.frombuffer(buf, dtype = dt, count = dataset.nr_points)
 
-        for k in dataset.unit.keys():
-            dataset[k] = data[str(k)]
+        for var in dataset.variables.values():
+            dataset[var.name] = data[str(var.name)]
+
+    def _load(self, f):
+        self.f = f
+
+        self.buf = bytearray()
+        self.offset = 0
+
+        self.separator = bytearray(self.SEPARATOR, self.ENCODING)
+
+        dataset = Dataset()
+        dataset.headers = {}
+        dataset.variables = None
+
+        while 1:
+            k, v = self.readheader()
+
+            k = k.lower()
+
+            if k == 'variables':
+                self._load_variables(dataset)
+                continue
+
+            if k == 'binary':
+                self._load_binary(dataset)
+                break
+
+            assert k not in dataset.headers
+            dataset.headers[k] = v
+
+            if k == 'no. variables':
+                dataset.nr_variables = int(v)
+            elif k == 'no. points':
+                dataset.nr_points = int(v)
+            elif k == 'flags':
+                dataset.flags = v.strip().split()
 
         return dataset
 
@@ -200,60 +227,77 @@ class SimulatorBase(object):
         with open(fn, 'w') as f:
             cir = self.circuit_to_spice(circuit, base = self.BASE)
             f.write('%s\n' % title)
+            f.write('%s\n' % self.HEADER)
             f.write('%s\n' % pre)
             f.write('%s\n' % cir)
             f.write('%s\n' % post)
             f.write('.end\n')
             f.close()
 
-    def _simulate(self, circuit, pre, post):
-        self.output = []
+    def _simulate(self, circuit, pre, post, secondary = False):
+        self.progress.start()
+        try:
+            status = 1
 
-        base = tempfile.mkdtemp(prefix = 'sim-', dir = '.')
+            self.output = []
 
-        cir_path = os.path.join(base, 'spice.cir')
-        raw_path = os.path.join(base, 'spice.raw')
+            base = tempfile.mkdtemp(prefix = 'sim-', dir = '.')
 
-        self._write_circuit(cir_path, circuit, pre, post)
+            cir_path = os.path.join(base, 'spice.cir')
+            raw_path = os.path.join(base, 'spice.raw')
 
-        cmd = self._make_cmd(cir_path, raw_path)
-        print(cmd)
-        self.trace(cmd + '\n')
+            self._write_circuit(cir_path, circuit, pre, post)
 
-        t0 = time.time()
-        p = Popen(cmd, shell = True,
-                  stdin = PIPE, stdout = PIPE, stderr = STDOUT,
-                  close_fds = True)
-        while 1:
-            buf = p.stdout.readline()
-            if not buf:
-                break
-            self.trace(buf.decode('ascii'))
-        ec = p.wait()
-        t1 = time.time()
+            cmd = self._make_cmd(cir_path, raw_path)
+            self.trace(cmd + '\n')
 
-        if self.timing:
-            print("simulation took %.3f seconds" % (t1-t0))
+            t0 = time.time()
+            p = Popen(cmd, shell = True,
+                      stdin = PIPE, stdout = PIPE, stderr = STDOUT,
+                      close_fds = True)
+            while 1:
+                buf = p.stdout.readline()
+                if not buf:
+                    break
+                self.trace(buf.decode('ascii').rstrip())
+            ec = p.wait()
+            t1 = time.time()
 
-        if ec != 0:
-            for l in self.output:
-                sys.stdout.write(l)
-            return None
+            if self.timing:
+                print("simulation took %.3f seconds" % (t1-t0))
 
-        with open(raw_path, 'rb') as f:
-            data = self._load(f)
-            assert len(self.read(1)) == 0
+            if ec != 0:
+                print("Simulation failed")
+                print()
+                if self.verbose < 1:
+                    print(self.log())
 
-        shutil.rmtree(base)
+            with open(raw_path, 'rb') as f:
+                data = self._load(f)
+                if secondary:
+                    data.secondary = self._load(f)
+                assert len(self.read(1)) == 0
 
-        return data
+            self._simulate_post(cir_path, raw_path, base)
+
+            shutil.rmtree(base)
+
+            status = 0
+
+            return data
+
+        finally:
+            self.progress.stop(status)
+
+    def _simulate_post(self, cir_path, raw_path, base):
+        pass
 
     def _fixup_data(self, data):
         return data
 
-    def _simulate_simple(self, circuit, *args):
+    def _simulate_simple(self, circuit, *args, **kwargs):
         args = [ self.fix_param(_) for _ in args ]
-        return self._simulate(circuit, '', ' '.join(args))
+        return self._simulate(circuit, '', ' '.join(args), **kwargs)
 
     def dc(self, circuit, source, start, stop, step):
         args = [ '.dc', source, start, stop, step ]
@@ -262,6 +306,10 @@ class SimulatorBase(object):
     def ac(self, circuit, variation, n, fstart, fstop):
         args = [ '.ac', variation, n, fstart, fstop ]
         return self._simulate_simple(circuit, *args)
+
+    def noise(self, circuit, out, ref, variation, n, fstart, fstop, **kwargs):
+        args = [ '.noise', out, ref, variation, n, fstart, fstop ]
+        return self._simulate_simple(circuit, *args, **kwargs)
 
     def tran(self, circuit, tstep, tstop, tstart=0, tmax=None, uic=False):
         args = [ '.tran', tstep, tstop, tstart ]

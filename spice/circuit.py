@@ -18,6 +18,10 @@ class Circuit(object):
         self.includes.add(include)
 
     def add_device(self, device):
+        if '?' in device.ref:
+            raise ValueError("Invalid ref %s" % device.ref)
+        if device.ref in self.devices:
+            raise ValueError("Duplicate device with ref %s" % device.ref)
         self.devices[device.ref] = device
 
     def R(self, ref, nodep, nodem, value):
@@ -34,6 +38,10 @@ class Circuit(object):
 
     def V(self, ref, nodep, nodem, value):
         assert(ref.startswith('V'))
+        self.add_device(Device(ref, [ nodep, nodem ], value))
+
+    def I(self, ref, nodep, nodem, value):
+        assert(ref.startswith('I'))
         self.add_device(Device(ref, [ nodep, nodem ], value))
 
     def Device(self, ref, nodes, model):

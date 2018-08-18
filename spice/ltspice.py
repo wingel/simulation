@@ -11,8 +11,8 @@ class LTspice(SimulatorBase):
     ENCODING = 'utf_16_le'
     BASE = '..'
 
-    def __init__(self, trace = None):
-        super(LTspice, self).__init__(trace)
+    def __init__(self):
+        super(LTspice, self).__init__()
 
     def _create_files(self):
         return 'spice.cir', 'spice.raw'
@@ -20,27 +20,41 @@ class LTspice(SimulatorBase):
     def _make_cmd(self, cir_path, raw_path):
         return '%s -b %s' % (self.SIMULATOR, cir_path)
 
-    def update_variables(self, dataset):
-        dataset.dt = []
-        for idx, (name, unit, params) in enumerate(self.variables):
-            name = name.upper()
-
-            if idx == 0 and name not in [ 'TIME', 'FREQUENCY' ]:
-                print('rename', name)
-                name = 'SWEEP'
-
-            elif name.startswith('V') and not name.startswith('V('):
-                name = 'V(%s)' % name
-
-            dataset.unit[name] = unit
-            dataset.params[name] = params
-
-            if 'complex' in dataset.flags:
-                dataset.dt.append(( name, np.complex128 ))
-            elif idx != 0:
-                dataset.dt.append(( name, np.float32 ))
+    def _simulate_post(self, cir_path, raw_path, base):
+        assert cir_path.endswith('.cir')
+        log_path = cir_path[:-4] + '.log'
+        with open(log_path, 'rb') as f:
+            data = f.read()
+            if data[1:2] == '\0':
+                log = data.decode(self.encoding)
             else:
-                dataset.dt.append(( name, np.float64 ))
+                log = data.decode('ascii')
+            self.trace(log)
+
+    def update_variable(self, dataset, var):
+        name = var.name.upper()
+
+        if name in [ 'GAIN', 'TIME' ]:
+            pass
+        elif var.idx == 0:
+            name = 'SWEEP'
+        elif name == 'V(ONOISE)':
+            name = 'V(ONOISE_SPECTRUM)'
+        elif name == 'INOISE':
+            name = 'V(INOISE_SPECTRUM)'
+        elif name.startswith('I('):
+            pass
+        elif not name.startswith('V('):
+            name = 'V(%s)' % name
+
+        var.name = name
+
+        if 'complex' in dataset.flags:
+            var.dt = np.complex128
+        elif var.idx != 0:
+            var.dt = np.float32
+        else:
+            var.dt = np.float64
 
     def dc(self, circuit, source, start, stop, step):
         args = [ '.dc', source, start, stop, step ]
