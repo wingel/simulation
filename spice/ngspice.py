@@ -7,11 +7,12 @@ import numpy as np
 
 class Ngspice(SimulatorBase):
     SIMULATOR = 'ngspice'
-    HEADER = '''.func if(a,b,c) 'ternary_fcn( a , b , c )
+    HEADER = '''
+#define NGSPICE
+.func if(a,b,c) 'ternary_fcn( a , b , c )
 .func limit(x, y, z) {min(max(x, min(y, z)), max(z, y))}
 .param TEMP=27
 '''
-
     def __init__(self):
         super(Ngspice, self).__init__()
 

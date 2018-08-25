@@ -12,6 +12,7 @@ import shutil
 from collections import OrderedDict
 
 from . import unit
+from . preprocessor import SpicePreprocessor
 
 class Dataset(dict):
     pass
@@ -49,6 +50,8 @@ class SimulatorBase(object):
         self.verbose = 0
         self.progress = Progress()
         self.last_trace = ''
+        self.preprocessor = SpicePreprocessor
+        self.includes = []
 
     def _dummy(self, *args, **kwargs):
         pass
@@ -91,7 +94,7 @@ class SimulatorBase(object):
         a = []
 
         for include in circuit.includes:
-            a.append('.include %s' % os.path.join(base, include))
+            a.append('#include "%s"' % os.path.join(base, include))
         for device in circuit.devices.values():
             a.append(self.device_to_spice(device))
 
@@ -224,13 +227,18 @@ class SimulatorBase(object):
     def _write_circuit(self, fn, circuit, pre, post):
         title = "simulation"
 
+        cir_s = self.circuit_to_spice(circuit, base = self.BASE)
+        s = '\n'.join([ self.HEADER, pre, post, cir_s ])
+        if self.preprocessor:
+            pp = self.preprocessor()
+            for include in self.includes:
+                pp.add_path(include)
+            pp.parse(s)
+            s = pp.output()
+
         with open(fn, 'w') as f:
-            cir = self.circuit_to_spice(circuit, base = self.BASE)
             f.write('%s\n' % title)
-            f.write('%s\n' % self.HEADER)
-            f.write('%s\n' % pre)
-            f.write('%s\n' % cir)
-            f.write('%s\n' % post)
+            f.write('%s\n' % s)
             f.write('.end\n')
             f.close()
 

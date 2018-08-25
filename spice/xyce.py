@@ -7,6 +7,7 @@ from .simulator import SimulatorBase
 
 class Xyce(SimulatorBase):
     SIMULATOR = 'LD_LIBRARY_PATH=/usr/local/xyce/serial/lib /usr/local/xyce/serial/bin/Xyce'
+    HEADER = '#define XYCE'
 
     def __init__(self):
         super(Xyce, self).__init__()

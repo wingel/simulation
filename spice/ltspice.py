@@ -10,6 +10,7 @@ class LTspice(SimulatorBase):
     SIMULATOR = 'DISPLAY=:0 "%s/.wine/drive_c/Program Files/LTC/LTspiceXVII/XVIIx64.exe"' % os.environ['HOME']
     ENCODING = 'utf_16_le'
     BASE = '..'
+    HEADER = '#define LTSPICE'
 
     def __init__(self):
         super(LTspice, self).__init__()
