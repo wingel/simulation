@@ -81,16 +81,67 @@ Jupyter notebook was installed using pip with:
 python3 -m pip install jupyter
 ```
 
-## LICENSE
+## LICENSING
 
-Copyright (C) 2018 Christer Weinigel <christer@weinigel.se>
+### Main libraries
 
-This library is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version.
+Unless otherwise specified all files are licensed under the following
+terms:
 
-This library is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the [GNU
-Lesser General Public License](LICENSE.txt) for more details.
+    Copyright (C) 2018 Christer Weinigel <christer@weinigel.se>
+
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the [GNU
+    Lesser General Public License](LICENSE.txt) for more details.
+
+In plain english: If you use these libraries in your application, you
+do not have to publish the source to your application.  But if you
+make modifications to the spice or kicard libraries themselves you
+have give publish those changes.
+
+### Example code
+
+You can use the source code in the Jupyter notebooks (*.ipynb) and
+test applications (test-*.py) any way you like.  They are meant to be
+used as examples and can be treated as public domain.  If your
+jurisdiction will not recognise public domain, you can choose to treat
+these files as licensed under the terms of the MIT License:
+
+    Copyright (c) 2018 Christer Weinigel
+
+    Permission is hereby granted, free of charge, to any person
+    obtaining a copy of this software and associated documentation
+    files (the "Software"), to deal in the Software without
+    restriction, including without limitation the rights to use, copy,
+    modify, merge, publish, distribute, sublicense, and/or sell copies
+    of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be
+    included in all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+    NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+    HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+    WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+    DEALINGS IN THE SOFTWARE.
+
+### Spice models
+
+The vendor spice models found in models_source are copyrighted by the
+respective vendors.  More information on licensing can be found in
+each file.
+
+As far as I know I am following all the license requirements for
+distributing these files.  If I have inadvertly failed to do so and
+you want me to remove a file, please send me a mail at
+<christer@weinigel.se> and I will do so promptly.
