@@ -2,7 +2,7 @@
 """
     Patch utility to apply unified diffs
 
-    Brute-force line-by-line non-recursive parsing 
+    Brute-force line-by-line non-recursive parsing
 
     Copyright (c) 2008-2016 anatoly techtonik
     Available under the terms of MIT license
@@ -53,7 +53,7 @@ def tostr(b):
 
   # [ ] figure out how to print non-utf-8 filenames without
   #     information loss
-  return b.decode('utf-8')    
+  return b.decode('utf-8')
 
 
 #------------------------------------------------
@@ -232,7 +232,7 @@ class Patch(object):
       If used as an iterable, returns hunks.
   """
   def __init__(self):
-    self.source = None 
+    self.source = None
     self.target = None
     self.hunks = []
     self.hunkends = []
@@ -338,7 +338,7 @@ class PatchSet(object):
 
     # regexp to match start of hunk, used groups - 1,3,4,6
     re_hunk_start = re.compile(b"^@@ -(\d+)(,(\d+))? \+(\d+)(,(\d+))? @@")
-    
+
     self.errors = 0
     # temp buffers for header and filenames info
     header = []
@@ -374,7 +374,7 @@ class PatchSet(object):
             else:
               info("%d unparsed bytes left at the end of stream" % len(b''.join(header)))
               self.warnings += 1
-              # TODO check for \No new line at the end.. 
+              # TODO check for \No new line at the end..
               # TODO test for unparsed bytes
               # otherwise error += 1
             # this is actually a loop exit
@@ -407,7 +407,7 @@ class PatchSet(object):
               p.hunkends["lf"] += 1
             elif line.endswith(b"\r"):
               p.hunkends["cr"] += 1
-              
+
             if line.startswith(b"-"):
               hunkactual["linessrc"] += 1
             elif line.startswith(b"+"):
@@ -503,7 +503,7 @@ class PatchSet(object):
           headscan = True
         else:
           if tgtname != None:
-            # XXX seems to be a dead branch  
+            # XXX seems to be a dead branch
             warning("skipping invalid patch - double target at line %d" % (lineno+1))
             self.errors += 1
             srcname = None
@@ -590,7 +590,7 @@ class PatchSet(object):
           warning("error: no patch data found!")
           return False
         else: # extra data at the end of file
-          pass 
+          pass
       else:
         warning("error: patch stream is incomplete!")
         self.errors += 1
@@ -616,7 +616,7 @@ class PatchSet(object):
     # --------
 
     self._normalize_filenames()
-    
+
     return (self.errors == 0)
 
   def _detect_type(self, p):
@@ -659,14 +659,14 @@ class PatchSet(object):
             return GIT
 
     # HG check
-    # 
+    #
     #  - for plain HG format header is like "diff -r b2d9961ff1f5 filename"
     #  - for Git-style HG patches it is "diff --git a/oldname b/newname"
     #  - filename starts with a/, b/ or is equal to /dev/null
     #  - exported changesets also contain the header
     #    # HG changeset patch
     #    # User name@example.com
-    #    ...   
+    #    ...
     # TODO add MQ
     # TODO add revision info
     if len(p.header) > 0:
@@ -689,7 +689,7 @@ class PatchSet(object):
 
         [x] always use forward slashes to be crossplatform
             (diff/patch were born as a unix utility after all)
-        
+
         return None
     """
     if debugmode:
@@ -739,7 +739,7 @@ class PatchSet(object):
         if xisabs(p.target):
           warning("stripping absolute path from target name '%s'" % p.target)
           p.target = xstrip(p.target)
-    
+
       self.items[i].source = p.source
       self.items[i].target = p.target
 
@@ -795,7 +795,7 @@ class PatchSet(object):
         hist = "+"*int(iwidth) + "-"*int(dwidth)
       # -- /calculating +- histogram --
       output += (format % (tostr(names[i]), str(insert[i] + delete[i]), hist))
- 
+
     output += (" %d files changed, %d insertions(+), %d deletions(-), %+d bytes"
                % (len(names), sum(insert), sum(delete), delta))
     return output
@@ -870,64 +870,7 @@ class PatchSet(object):
 
       # validate before patching
       f2fp = open(filename, 'rb')
-      hunkno = 0
-      hunk = p.hunks[hunkno]
-      hunkfind = []
-      hunkreplace = []
-      validhunks = 0
-      canpatch = False
-      for lineno, line in enumerate(f2fp):
-        if lineno+1 < hunk.startsrc:
-          continue
-        elif lineno+1 == hunk.startsrc:
-          hunkfind = [x[1:].rstrip(b"\r\n") for x in hunk.text if x[0] in b" -"]
-          hunkreplace = [x[1:].rstrip(b"\r\n") for x in hunk.text if x[0] in b" +"]
-          #pprint(hunkreplace)
-          hunklineno = 0
-
-          # todo \ No newline at end of file
-
-        # check hunks in source file
-        if lineno+1 < hunk.startsrc+len(hunkfind)-1:
-          if line.rstrip(b"\r\n") == hunkfind[hunklineno]:
-            hunklineno+=1
-          else:
-            info("file %d/%d:\t %s" % (i+1, total, filename))
-            info(" hunk no.%d doesn't match source file at line %d" % (hunkno+1, lineno+1))
-            info("  expected: %s" % hunkfind[hunklineno])
-            info("  actual  : %s" % line.rstrip(b"\r\n"))
-            # not counting this as error, because file may already be patched.
-            # check if file is already patched is done after the number of
-            # invalid hunks if found
-            # TODO: check hunks against source/target file in one pass
-            #   API - check(stream, srchunks, tgthunks)
-            #           return tuple (srcerrs, tgterrs)
-
-            # continue to check other hunks for completeness
-            hunkno += 1
-            if hunkno < len(p.hunks):
-              hunk = p.hunks[hunkno]
-              continue
-            else:
-              break
-
-        # check if processed line is the last line
-        if lineno+1 == hunk.startsrc+len(hunkfind)-1:
-          debug(" hunk no.%d for file %s  -- is ready to be patched" % (hunkno+1, filename))
-          hunkno+=1
-          validhunks+=1
-          if hunkno < len(p.hunks):
-            hunk = p.hunks[hunkno]
-          else:
-            if validhunks == len(p.hunks):
-              # patch file
-              canpatch = True
-              break
-      else:
-        if hunkno < len(p.hunks):
-          warning("premature end of source file %s at hunk %d" % (filename, hunkno+1))
-          errors += 1
-
+      canpatch, validhunks = self.verify(self, i, filename, total,p, f2fp)
       f2fp.close()
 
       if validhunks < len(p.hunks):
@@ -960,6 +903,66 @@ class PatchSet(object):
     # todo: check for premature eof
     return (errors == 0)
 
+  def verify(self, i, total, filename, p, f2fp):
+    hunkno = 0
+    hunk = p.hunks[hunkno]
+    hunkfind = []
+    hunkreplace = []
+    validhunks = 0
+    canpatch = False
+    for lineno, line in enumerate(f2fp):
+      if lineno+1 < hunk.startsrc:
+        continue
+      elif lineno+1 == hunk.startsrc:
+        hunkfind = [x[1:].rstrip(b"\r\n") for x in hunk.text if x[0] in b" -"]
+        hunkreplace = [x[1:].rstrip(b"\r\n") for x in hunk.text if x[0] in b" +"]
+        #pprint(hunkreplace)
+        hunklineno = 0
+
+        # todo \ No newline at end of file
+
+      # check hunks in source file
+      if lineno+1 < hunk.startsrc+len(hunkfind)-1:
+        if line.rstrip(b"\r\n") == hunkfind[hunklineno]:
+          hunklineno+=1
+        else:
+          info("file %d/%d:\t %s" % (i+1, total, filename))
+          info(" hunk no.%d doesn't match source file at line %d" % (hunkno+1, lineno+1))
+          info("  expected: %s" % hunkfind[hunklineno])
+          info("  actual  : %s" % line.rstrip(b"\r\n"))
+          # not counting this as error, because file may already be patched.
+          # check if file is already patched is done after the number of
+          # invalid hunks if found
+          # TODO: check hunks against source/target file in one pass
+          #   API - check(stream, srchunks, tgthunks)
+          #           return tuple (srcerrs, tgterrs)
+
+          # continue to check other hunks for completeness
+          hunkno += 1
+          if hunkno < len(p.hunks):
+            hunk = p.hunks[hunkno]
+            continue
+          else:
+            break
+
+      # check if processed line is the last line
+      if lineno+1 == hunk.startsrc+len(hunkfind)-1:
+        debug(" hunk no.%d for file %s  -- is ready to be patched" % (hunkno+1, filename))
+        hunkno+=1
+        validhunks+=1
+        if hunkno < len(p.hunks):
+          hunk = p.hunks[hunkno]
+        else:
+          if validhunks == len(p.hunks):
+            # patch file
+            canpatch = True
+            break
+    else:
+      if hunkno < len(p.hunks):
+        warning("premature end of source file %s at hunk %d" % (filename, hunkno+1))
+        errors += 1
+
+    return canpatch, validhunks
 
   def _reverse(self):
     """ reverse patch direction (this doesn't touch filenames) """
@@ -1038,7 +1041,7 @@ class PatchSet(object):
 
   def patch_stream(self, instream, hunks):
     """ Generator that yields stream patched with hunks iterable
-    
+
         Converts lineends in hunk lines to the best suitable format
         autodetected from input
     """
@@ -1091,7 +1094,7 @@ class PatchSet(object):
             yield line2write.rstrip(b"\r\n")+newline
           else: # newlines are mixed
             yield line2write
-     
+
     for line in instream:
       yield line
 

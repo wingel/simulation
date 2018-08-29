@@ -12,3 +12,8 @@ Model('LMH6702',
 Model('LMV981',
       mod = ('LMV981.MOD', '4d1e935bdcab07c3a559'),
       doc = 'LMV981.txt')
+
+# OPAy695 PSpice Model (Rev. B), 26 may 2009, http://www.ti.com/lit/zip/sboc036
+Model('OPA695',
+      mod = Patch('OPA695_PSPICE_MODEL.txt', 'OPA695_PSPICE_MODEL.diff',
+                  'a0004433d0ffa8145e9f'))

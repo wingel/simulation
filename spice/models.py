@@ -5,6 +5,10 @@ import sys
 import os
 import hashlib
 
+from StringIO import StringIO
+
+from . patch import PatchSet
+
 if sys.version_info.major < 3:
     STRING_TYPES = (str, unicode)
 else:
@@ -50,6 +54,33 @@ class Path(object):
 
     def __repr__(self):
         return 'Path(%s, %s)' % (repr(self.path), self.hash)
+
+class Patch(Path):
+    def __init__(self, url, patch, hash = None):
+        super(Patch, self).__init__(url)
+        self.patch = parse_spec(patch)
+        self.patch_hash = hash.lower()
+
+    def load(self, base):
+        text = super(Patch, self).load(base)
+        path = os.path.join(base, self.patch.path)
+        patchset = PatchSet(open(path))
+
+        for i, p in enumerate(patchset.items):
+            patchset.verify(i, 1, self.path, p, StringIO(text))
+            lines = patchset.patch_stream(StringIO(text), p.hunks)
+            text = ''.join(lines)
+
+        calc = calculate_hash(text)
+
+        print('%s: %s' % (path, calc))
+        if self.patch_hash and self.patch_hash != calc:
+            print("%s: patch hash mismatch, expected %s" % (path, self.patch_hash))
+
+        return text
+
+    def __repr__(self):
+        return 'Patch(%s, %s, %s)' % (repr(self.path), repr(self.patch), self.hash)
 
 class Model(object):
     def __init__(self, name, mod, doc = None, base = ''):
