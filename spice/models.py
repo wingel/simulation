@@ -7,10 +7,7 @@ import hashlib
 
 from StringIO import StringIO
 
-if __name__ == '__main__':
-    from patch import PatchSet
-else:
-    from . patch import PatchSet
+from . patch import PatchSet
 
 if sys.version_info.major < 3:
     STRING_TYPES = (str, unicode)
@@ -135,7 +132,7 @@ class LibraryManager(object):
     def resolve(self):
         for root, dirs, files in os.walk(self.source_path):
             for fn in files:
-                if os.path.normcase(fn) == 'models.py':
+                if os.path.normcase(fn) == 'index.py':
                     global _base_name
                     _base_name = os.path.relpath(root, self.source_path)
                     _base_name = _base_name.replace('\\', '/')
@@ -171,12 +168,3 @@ class LibraryManager(object):
                 os.rename(tmp_path, dst_path)
 
     print()
-
-if __name__ == '__main__':
-    manager = LibraryManager(
-        '../models_source',
-        '../models_download',
-        '../models')
-    manager.resolve()
-    manager.process()
-

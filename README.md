@@ -11,10 +11,10 @@ Spice-enabled components have been tested so far.
 [test-ngspice.py](test-ngspice.py) shows how to run a simulation using
 Ngspice from the command line.
 
-For a more adavanced example on how to use this library, see this
-[Jupyter Notebook](butterworth.ipynb).  Just about anything in the
-notebook can also be run directly from Python and produce output in an
-interactive matplotlib window instead.
+For a more advanced example on how to use this library, see the output
+from this [Jupyter Notebook](examples/butterworth/butterworth.html).
+Just about anything in the notebook can also be run directly from
+Python and produce output in an interactive matplotlib window instead.
 
 If you want to out the notebook yourself, follow the install
 instructions below and then start the Jupyter notebook with:
