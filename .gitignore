@@ -6,4 +6,6 @@
 *.pyc
 *.pyo
 .ipynb_checkpoints/
+#*#
+.#*
 models
