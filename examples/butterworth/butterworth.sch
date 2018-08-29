@@ -102,10 +102,10 @@ Wire Wire Line
 	4900 3700 5000 3700
 Wire Wire Line
 	4600 3700 4500 3700
-Text GLabel 7350 3800 2    50   Output ~ 0
+Text GLabel 7300 3800 2    50   Output ~ 0
 VOUT
 Wire Wire Line
-	7350 3800 7100 3800
+	7300 3800 7100 3800
 $Comp
 L Device:C C102
 U 1 1 5B70BACC
@@ -196,29 +196,6 @@ F 3 "" H 5800 4100 50  0001 C CNN
 	-1   0    0    1   
 $EndComp
 $Comp
-L Amplifier_Operational:LMV601 U101
-U 1 1 5B71E57A
-P 5900 3800
-F 0 "U101" H 6100 4150 50  0000 L CNN
-F 1 "LMV981" H 6100 4050 50  0000 L CNN
-F 2 "Package_TO_SOT_SMD:SOT-363_SC-70-6" H 5900 3800 50  0001 L CNN
-F 3 "http://www.ti.com/lit/ds/symlink/lmv601.pdf" H 5900 3450 50  0001 L CNN
-F 4 "X" H 5900 3800 50  0001 C CNN "Spice_Primitive"
-F 5 "LMV981" H 5900 3800 50  0001 C CNN "Spice_Model"
-F 6 "Y" H 5900 3800 50  0001 C CNN "Spice_Netlist_Enabled"
-F 7 "1 3 6 2 4 5" H 5900 3800 50  0001 C CNN "Spice_Node_Sequence"
-F 8 "LMV981.MOD" H 5900 3800 50  0001 C CNN "Spice_Lib_File"
-	1    5900 3800
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	5900 4100 6000 4100
-Wire Wire Line
-	6000 3500 5800 3500
-Wire Wire Line
-	6000 3500 6000 4100
-Connection ~ 5800 3500
-$Comp
 L pspice:VSOURCE V101
 U 1 1 5B747B28
 P 3800 4400
@@ -243,4 +220,20 @@ Wire Wire Line
 Connection ~ 5000 5100
 Text Label 3800 3700 0    50   ~ 0
 VIN
+$Comp
+L Amplifier_Operational:AD8603 U101
+U 1 1 5B861DA4
+P 5900 3800
+F 0 "U101" H 6000 4100 50  0000 L CNN
+F 1 "LMH6624" H 6000 4000 50  0000 L CNN
+F 2 "Package_TO_SOT_SMD:TSOT-23-5" H 5900 3800 50  0001 C CNN
+F 3 "http://www.analog.com/media/en/technical-documentation/data-sheets/AD8603_8607_8609.pdf" H 5900 4000 50  0001 C CNN
+F 4 "X" H 5900 3800 50  0001 C CNN "Spice_Primitive"
+F 5 "LMH6624" H 5900 3800 50  0001 C CNN "Spice_Model"
+F 6 "Y" H 5900 3800 50  0001 C CNN "Spice_Netlist_Enabled"
+F 7 "3 4 5 2 1" H 5900 3800 50  0001 C CNN "Spice_Node_Sequence"
+F 8 "LMH6624.MOD" H 5900 3800 50  0001 C CNN "Spice_Lib_File"
+	1    5900 3800
+	1    0    0    -1  
+$EndComp
 $EndSCHEMATC
