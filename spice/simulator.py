@@ -242,7 +242,8 @@ class SimulatorBase(object):
             f.write('.end\n')
             f.close()
 
-    def _simulate(self, circuit, pre, post, secondary = False):
+    def _simulate(self, circuit, pre, post, secondary = False,
+                  postprocess = None):
         self.progress.start()
         try:
             status = 1
@@ -285,6 +286,9 @@ class SimulatorBase(object):
                 if secondary:
                     data.secondary = self._load(f)
                 assert len(self.read(1)) == 0
+
+            if postprocess:
+                postprocess(data, cir_path, raw_path, base)
 
             self._simulate_post(cir_path, raw_path, base)
 

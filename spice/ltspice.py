@@ -9,7 +9,6 @@ from .simulator import SimulatorBase, Dataset
 class LTspice(SimulatorBase):
     SIMULATOR = 'DISPLAY=:0 "%s/.wine/drive_c/Program Files/LTC/LTspiceXVII/XVIIx64.exe"' % os.environ['HOME']
     ENCODING = 'utf_16_le'
-    BASE = '..'
     HEADER = '#define LTSPICE'
 
     def __init__(self):
@@ -71,6 +70,15 @@ class LTspice(SimulatorBase):
             args.append('uic')
         data = self._simulate_simple(circuit, *args)
         data['TIME'] = abs(data['TIME'])
+        return data
+
+    def noise(self, *args, **kwargs):
+        data = super(LTspice, self).noise(*args, **kwargs)
+
+        # Ngspice and Xyce return V^2/HZ while LTspice returns V/rtHz;
+        # convert LTspice spectrums to same format as them
+        for name in [ 'V(INOISE_SPECTRUM)',  'V(ONOISE_SPECTRUM)' ]:
+            data[name] = data[name] ** 2
         return data
 
 Simulator = LTspice
