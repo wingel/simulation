@@ -128,7 +128,7 @@ cap_values = [ 35 * n, 350 * n, 3500 * n ]
 ac_data = []
 for v in cap_values:
     for ref in cap_refs:
-        circuit.devices[ref].value = v
+        circuit[ref].value = v
     ac_data.append((v, sim.ac(circuit, 'dec', 10, 1, 100 * k)))
     
 # Show all the results from ac_data in one plot
@@ -156,7 +156,7 @@ plt.show()
 tran_data = []
 for v in cap_values:
     for ref in cap_refs:
-        circuit.devices[ref].value = v
+        circuit[ref].value = v
     tran_data.append((v, sim.tran(circuit, 100 * u, 50 * m)))
 
 # Plot the results

@@ -95,7 +95,7 @@ class SimulatorBase(object):
 
         for include in circuit.includes:
             a.append('#include "%s"' % os.path.join(base, include))
-        for device in circuit.devices.values():
+        for device in circuit.values():
             a.append(self.device_to_spice(device))
 
         a.append('')

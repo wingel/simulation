@@ -9,9 +9,8 @@ class Device(object):
         self.args = args
         self.kwargs = kwargs
 
-class Circuit(object):
+class Circuit(dict):
     def __init__(self):
-        self.devices = {}
         self.includes = set()
 
     def add_include(self, include):
@@ -20,9 +19,9 @@ class Circuit(object):
     def add_device(self, device):
         if '?' in device.ref:
             raise ValueError("Invalid ref %s" % device.ref)
-        if device.ref in self.devices:
+        if device.ref in self:
             raise ValueError("Duplicate device with ref %s" % device.ref)
-        self.devices[device.ref] = device
+        self[device.ref] = device
 
     def R(self, ref, nodep, nodem, value):
         assert(ref.startswith('R'))
